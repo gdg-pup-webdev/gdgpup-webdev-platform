@@ -54,3 +54,41 @@ walletsRouter.patch("/:uid/increment", async (req, res) => {
 
   res.json(createApiResponse(true, "Success", { points: newPoints }));
 });
+
+walletsRouter.get("/", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const sortDirection = ((req.query.sortDirection as string) || "desc") as
+      | "asc"
+      | "desc";
+    const lastPageToken = (req.query.lastPageToken as string) || null;
+
+    let query = db
+      .collection("wallets")
+      .orderBy("points", sortDirection)
+      .limit(limit);
+
+    if (lastPageToken) {
+      const lastDoc = await db.collection("wallets").doc(lastPageToken).get();
+      if (lastDoc.exists) {
+        query = query.startAfter(lastDoc);
+      }
+    }
+
+    const snapshot = await query.get();
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(
+      createApiResponse(true, "Success", {
+        result: data,
+        lastPageToken: data[data.length - 1]?.id || null,
+      })
+    );
+  } catch (err) {
+    console.error("Error fetching blogs:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch blogs" });
+  }
+});
