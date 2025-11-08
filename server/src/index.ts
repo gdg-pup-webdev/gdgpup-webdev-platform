@@ -1,8 +1,8 @@
 import express from "express";
-import { router as helloRouter } from "./routes/hello.js";
-import { authRouter } from "./routes/authRoutes.js";
+import { authRouter } from "./routes/auth.js";
 import { verifyToken } from "./middlewares/verifyToken.js";
 import { restrictRoute } from "./middlewares/restrictRoute.js";
+import { walletsRouter } from "./routes/wallets.js";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -15,8 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(verifyToken);
 
 // Routes
-app.use("/api/test", helloRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/wallets", walletsRouter);
 
 // admin only route
 app.use(restrictRoute(["admin"]));
