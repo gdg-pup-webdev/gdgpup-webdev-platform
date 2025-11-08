@@ -19,11 +19,11 @@ app.use("/api/auth", authRouter);
 app.use("/api/wallets", walletsRouter);
 
 // admin only route
-app.use(restrictRoute(["admin"]));
+// app.use(restrictRoute(["admin"]));
 
-app.use("/api/admin", (req, res) => {
-  res.json({ message: "Admin route" });
-});
+// app.use("/api/admin", (req, res) => {
+//   res.json({ message: "Admin route" });
+// });
 
 app.get("/", (req, res) => {
   res.send("🚀 Express + TypeScript server is running!");
