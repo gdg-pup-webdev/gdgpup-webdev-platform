@@ -10,7 +10,7 @@ walletsRouter.get("/:uid", async (req, res) => {
   const uid = req.params.uid;
 
   // check if user exists using firebase auth
-  if (!await isUserExists(uid)) {
+  if (!(await isUserExists(uid))) {
     res.status(404).json(createApiResponse(false, "User not found"));
     return;
   }
@@ -31,4 +31,26 @@ walletsRouter.get("/:uid", async (req, res) => {
   }
 
   res.json(createApiResponse(true, "Success", doc.data()));
+});
+
+walletsRouter.patch("/:uid/increment", async (req, res) => {
+  const uid = req.params.uid;
+
+  const body = req.body;
+  const payload: { increment: number } = body.payload;
+
+  // check if wallet exists
+  const doc = await db.collection("wallets").doc(uid).get();
+
+  if (!doc.exists) {
+    res.status(404).json(createApiResponse(false, "Wallet not found"));
+    return;
+  }
+
+  const wallet = doc.data() as Wallet;
+  const newPoints = wallet.points + payload.increment;
+
+  await db.collection("wallets").doc(uid).update({ points: newPoints });
+
+  res.json(createApiResponse(true, "Success", { points: newPoints }));
 });
