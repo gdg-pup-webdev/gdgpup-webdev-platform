@@ -3,6 +3,7 @@ import { authRouter } from "./routes/authRoutes.js";
 import { verifyToken } from "./middlewares/verifyToken.js"; 
 import { walletsRouter } from "./routes/walletRoutes.js";
 import { tokenRouter } from "./routes/tokenRoutes.js";
+import { questionRouter } from "./routes/questionRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -18,6 +19,7 @@ app.use(verifyToken);
 app.use("/api/auth", authRouter);
 app.use("/api/wallets", walletsRouter);
 app.use("/api/tokens", tokenRouter);
+app.use("/api/questions", questionRouter);
 
 // admin only route
 // app.use(restrictRoute(["admin"]));
