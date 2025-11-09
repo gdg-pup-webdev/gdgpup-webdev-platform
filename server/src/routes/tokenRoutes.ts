@@ -5,7 +5,7 @@ import { generateTokenCode } from "../utils/tokenUtil.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
 import {
-    claimToken,
+  claimToken,
   createToken,
   getToken,
   listTokens,
@@ -22,9 +22,5 @@ tokenRouter.get("/:tokenId", getToken);
 tokenRouter.get("/", listTokens);
 
 tokenRouter.patch("/:tokenId/void", voidToken);
-
-const defaulthandler: RequestHandler = async (req, res) => {
-  res.status(501).json(createApiResponse(false, "Not implemented"));
-};
 
 tokenRouter.patch("/:tokenId/claim", claimToken);

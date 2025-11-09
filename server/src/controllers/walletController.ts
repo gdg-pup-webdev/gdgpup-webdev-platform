@@ -13,6 +13,9 @@ import { WalletDuplicate, WalletList } from "../types/Wallet.js";
 export const getWallet: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
+  // PERMISSIONS:
+  // public
+
   // check if user exists
   const user = await fetchUserFromDb(uid);
   if (!user) {
@@ -31,33 +34,7 @@ export const getWallet: RequestHandler = async (req, res) => {
   // returning the response
   res.json(createApiResponse(true, "Success", wallet));
 };
-
-export const incrementWalletPoints: RequestHandler = async (req, res) => {
-  const user = req.user!; 
-  const uid = req.params.uid;
-
-  // PERMISSIONS:
-  // Must be authenticated and accessing own claims 
-  if ( user.uid !== uid) {
-    return res.status(403).json(createApiResponse(false, "Forbidden."));
-  }
-
-  const requestBody = req.body as ApiRequestBody<{ amount: number }>;
-  const amount = requestBody.payload.amount;
-
-  // get the wallet and increment it
-  let wallet = await fetchWalletFromDb(uid);
-
-  // if wallet doesnt exist, initiate one with 0 points
-  if (!wallet) {
-    wallet = await createNewWalletOnDb(uid);
-  }
-
-  const newWallet = await incrementWalletValue(wallet, amount);
-
-  // returning the response
-  res.json(createApiResponse(true, "Success", newWallet));
-};
+ 
 
 export const listWallets: RequestHandler = async (req, res) => {
   // get sort direction (asc or desc)

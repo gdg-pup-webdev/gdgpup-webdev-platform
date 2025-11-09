@@ -1,6 +1,11 @@
 import { RequestHandler } from "express";
 import { ApiRequestBody } from "../types/ApiInterface.js";
-import { CreateTokenDTO, Token, TokenCore } from "../types/Token.js";
+import {
+  CreateTokenDTO,
+  createTokenSchema,
+  Token,
+  TokenCore,
+} from "../types/Token.js";
 import { generateTokenCode } from "../utils/tokenUtil.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
@@ -20,9 +25,14 @@ export const createToken: RequestHandler = async (req, res) => {
     return res.status(403).json(createApiResponse(false, "Forbidden."));
   }
 
-  // STEP 1: retriving the createTokenDTO
-  const body = req.body as ApiRequestBody<CreateTokenDTO>;
-  const createTokenDTO = body.payload;
+  // STEP 1: retriving and validating the createTokenDTO
+  let createTokenDTO = {} as CreateTokenDTO;
+  try {
+    const body = req.body as ApiRequestBody<CreateTokenDTO>;
+    createTokenDTO = createTokenSchema.parse(body.payload);
+  } catch (error) {
+    return res.status(400).json(createApiResponse(false, "Invalid DTO"));
+  }
 
   // create new token code
   let tokenCode = "";
@@ -195,15 +205,22 @@ export const claimToken: RequestHandler = async (req, res) => {
       .json(createApiResponse(false, "User has already claimed the token"));
   }
 
+  // check if token has been used up
+  if (token.maxUses <= token.claimHistory.length) {
+    return res
+      .status(400)
+      .json(createApiResponse(false, "Token has been used up"));
+  }
+
   // add user to token claimants
   token.claimHistory.push({ uid: uid, date: Date.now() });
   await db
     .collection("tokens")
     .doc(tokenId)
-    .update({ claimants: token.claimHistory });
+    .update(token);
 
   // increment user walletpoints
-  const newWallet = await incrementWalletValue(wallet, token.value);
+  const newWallet = await incrementWalletValue(wallet, token.value, `Claimed ${token.value} points from token ${token.code}`);
 
   // return new wallet data and new token data
   res.json(

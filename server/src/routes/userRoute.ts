@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getUser,
   getUserCustomClaims,
   nullifyUserCustomClaims,
 } from "../controllers/userController.js";
@@ -16,10 +17,12 @@ userRouter.use(ensureUserExists);
  * Get user’s custom-claims
  * Must be authenticated and accessing own claims, except for admins
  */
-userRouter.get("/custom-claims/:uid", getUserCustomClaims);
+userRouter.get("/:uid", getUser)
+
+userRouter.get("/:uid/custom-claims", getUserCustomClaims);
 
 userRouter.delete(
-  "/custom-claims/:uid/",
+  "/:uid/custom-claims",
   restrictRoute(["admin"]),
   nullifyUserCustomClaims
 );

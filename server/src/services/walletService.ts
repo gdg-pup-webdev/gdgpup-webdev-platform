@@ -1,9 +1,6 @@
 import { randomUUID } from "crypto";
 import { db } from "../lib/firebase.js";
 import { Wallet, WalletDuplicate, WalletList } from "../types/Wallet.js";
-import { createApiResponse } from "../utils/apiRespones.js";
-import { isUserValid } from "../utils/firebaseUtils.js";
-import { JournalEntry } from "../types/Journal.js";
 
 /**
  * Fetch the wallet of a user from the database.
@@ -12,9 +9,7 @@ import { JournalEntry } from "../types/Journal.js";
  * @param {string} uid - UID of the wallet owner. Assumes the user exists.
  * @returns {Promise<Wallet>} A Promise that resolves to the user's wallet. If no wallet existed, the returned wallet will be newly created with 0 points.
  */
-export const fetchWalletFromDb = async (
-  uid: string
-): Promise<Wallet > => {
+export const fetchWalletFromDb = async (uid: string): Promise<Wallet> => {
   const doc = await db.collection("wallets").doc(uid).get();
 
   if (!doc.exists) {
@@ -37,19 +32,8 @@ export const createNewWalletOnDb = async (uid: string) => {
   // post new wallet on database
   await db.collection("wallets").doc(uid).set(defaultWallet);
 
-  // get complete list of wallets
-  const listDoc = await db.collection("wallets").doc("list").get();
-  if (!listDoc.exists) {
-    // if list doesnt exist, create it
-    await db.collection("wallets").doc("list").set({});
-  }
-  const walletList = listDoc.data() as WalletList;
-
-  // add new wallet to list
-  walletList[uid] = defaultWallet;
-
-  // post on database
-  await db.collection("wallets").doc("list").set(walletList);
+  // update wallet list
+  await updateWalletList(defaultWallet);
 
   return defaultWallet;
 };
@@ -66,11 +50,10 @@ export const updateWalletList = async (
 
   // get complete list of wallets
   const listDoc = await db.collection("wallets").doc("list").get();
-  if (!listDoc.exists) {
-    // if list doesnt exist, create it
-    await db.collection("wallets").doc("list").set({});
+  let walletList = {} as WalletList;
+  if (listDoc.exists) {
+    walletList = listDoc.data() as WalletList;
   }
-  const walletList = listDoc.data() as WalletList;
 
   // add new wallet to list
   walletList[walletDuplicate.uid] = walletDuplicate;
@@ -98,7 +81,8 @@ export const updateWalletList = async (
  */
 export const incrementWalletValue = async (
   wallet: Wallet,
-  increment: number
+  increment: number,
+  message ?: string 
 ): Promise<Wallet> => {
   // create the updated wallet
   const newPoints = wallet.points + increment;
@@ -110,13 +94,13 @@ export const incrementWalletValue = async (
       {
         change: increment,
         date: Date.now(),
-        message: `Added ${increment} points`,
+        message: message || `Added ${increment} points`,
       },
     ],
   };
 
   // post changes on the database
-  await db.collection("wallets").doc(wallet.id).update({ points: newPoints });
+  await db.collection("wallets").doc(wallet.id).update(newWallet);
 
   // update wallet list
   await updateWalletList(newWallet);
