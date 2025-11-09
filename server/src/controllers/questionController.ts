@@ -176,7 +176,7 @@ export const getDailyQuestion: RequestHandler = async (req, res) => {
 // POST /api/questions/{questionId}/submit-answer/?answer=answer
 export const submitAnswer: RequestHandler = async (req, res) => {
   // TO DO: implement this function
-}
+};
 
 // return list of questions
 // query parameters: limit, sortDirection, lastPageToken
@@ -250,14 +250,89 @@ export const deleteQuestion: RequestHandler = async (req, res) => {
       .status(500)
       .json(createApiResponse(false, "Failed to delete question"));
   }
-}
+};
 
 // update specific question
 // PUT /questions/{questionId}
 export const updateQuestion: RequestHandler = async (req, res) => {
-}
+  // Check for authenticated user
+  if (!req.user) {
+    return res.status(401).json({ error: "No user found" });
+  }
+
+  // Get questionId from params
+  const questionId = req.params.questionId;
+  const body = req.body as ApiRequestBody<CreateQuestionDTO>;
+  
+  if (!body) {
+    // Request body is required
+    return res
+      .status(400)
+      .json(createApiResponse(false, "Request body is required"));
+  }
+
+  // Validate question
+  const validationResult = validateCreateQuestionPayload(body.payload);
+
+  // Return error if validation fails
+  if (!validationResult.success) {
+    return res
+      .status(400)
+      .json(
+        createApiResponse(
+          false,
+          "Invalid question payload",
+          validationResult.error.flatten()
+        )
+      );
+  }
+  // Storing the validated data
+  const updateQuestionDTO = validationResult.data;
+  try {
+    const questionDoc = db.collection("questions").doc(questionId);
+    const questionSnapshot = await questionDoc.get();
+
+    if (!questionSnapshot.exists) {
+      // Question not found
+      return res
+        .status(404)
+        .json(createApiResponse(false, "Question not found"));
+    }
+
+    // Update question
+    const scheduledDate = Date.UTC(
+      updateQuestionDTO.scheduledYear,
+      updateQuestionDTO.scheduledMonth - 1,
+      updateQuestionDTO.scheduledDay
+    );
+
+    if (Number.isNaN(scheduledDate)) {
+      return res
+        .status(400)
+        .json(createApiResponse(false, "Invalid scheduled date"));
+    }
+
+    const now = Date.now();
+
+    await questionDoc.update({
+      ...updateQuestionDTO,
+      scheduledDate,
+      updatedAt: now,
+      lastEditorUid: req.user.uid,
+    });
+
+    return res
+      .status(200)
+      .json(createApiResponse(true, "Question updated successfully"));
+  } catch (error) {
+    console.error("Failed to update question", error);
+    return res
+      .status(500)
+      .json(createApiResponse(false, "Failed to update question"));
+  }
+};
 
 // PATCH /questions/userHistory/{userId}
 export const getAnswerHistory: RequestHandler = async (req, res) => {
   // TO DO: implement this function
-}
+};
