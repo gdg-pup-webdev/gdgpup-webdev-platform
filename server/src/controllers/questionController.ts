@@ -9,6 +9,7 @@ import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
 import { validateCreateQuestionPayload } from "../services/questionService.js";
 
+// POST /questions
 export const createQuestion: RequestHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "No user found" });
@@ -88,3 +89,35 @@ export const createQuestion: RequestHandler = async (req, res) => {
       .json(createApiResponse(false, "Failed to create question"));
   }
 };
+
+// return specific question 
+// GET /questions/{questionId}
+export const getQuestion: RequestHandler = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "No user found" });
+  }
+
+  const questionId = req.params.questionId;
+
+  try {
+    const questionDoc = db.collection("questions").doc(questionId);
+    const questionSnapshot = await questionDoc.get();
+    if (!questionSnapshot.exists) {
+      return res
+        .status(404)
+        .json(createApiResponse(false, "Question not found"));
+    }
+
+    const question = questionSnapshot.data() as Question;
+
+    return res
+      .status(200)
+      .json(createApiResponse(true, "Success", question));
+  } catch (error) {
+    console.error("Failed to get question", error);
+    return res
+      .status(500)
+      .json(createApiResponse(false, "Failed to get question"));
+  }
+}
+    
