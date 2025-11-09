@@ -93,25 +93,31 @@ export const createQuestion: RequestHandler = async (req, res) => {
 // return specific question
 // GET /questions/{questionId}
 export const getQuestion: RequestHandler = async (req, res) => {
+  // Check for authenticated user
   if (!req.user) {
     return res.status(401).json({ error: "No user found" });
   }
 
+  // Get questionId from params
   const questionId = req.params.questionId;
 
   try {
+    // Get question from database
     const questionDoc = db.collection("questions").doc(questionId);
     const questionSnapshot = await questionDoc.get();
     if (!questionSnapshot.exists) {
+      // Question not found
       return res
         .status(404)
         .json(createApiResponse(false, "Question not found"));
     }
 
+    // Retrieve question data
     const question = questionSnapshot.data() as Question;
-
+    // Return the found question
     return res.status(200).json(createApiResponse(true, "Success", question));
   } catch (error) {
+    // Log the error
     console.error("Failed to get question", error);
     return res
       .status(500)
