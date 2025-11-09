@@ -35,9 +35,6 @@ export const getWallet : RequestHandler = async (req, res) => {
   res.json(createApiResponse(true, "Success", doc.data()));
 }
 
-
-
-
 export const incrementWalletPoints : RequestHandler =  async (req, res) => {
   const uid = req.params.uid;
 
@@ -79,8 +76,6 @@ export const incrementWalletPoints : RequestHandler =  async (req, res) => {
   res.json(createApiResponse(true, "Success", { points: newPoints }));
 }
 
-
-
 export const listWallets : RequestHandler = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
@@ -118,7 +113,6 @@ export const listWallets : RequestHandler = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
 }
-
 
 export const listWalletHistory : RequestHandler = async (req, res) => {
   try {
@@ -162,8 +156,6 @@ export const listWalletHistory : RequestHandler = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
 }
-
-
 
 export const getWalletHistoryEntry : RequestHandler = async (req, res) => {
   const uid = req.params.uid;

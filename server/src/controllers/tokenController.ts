@@ -49,3 +49,55 @@ export const createToken: RequestHandler = async (req, res) => {
 
   res.json(createApiResponse(true, "Success", token));
 };
+
+export const getToken: RequestHandler = async (req, res) => {
+  const tokenId = req.params.tokenId;
+
+  // check if wallet exists
+  const doc = await db.collection("tokens").doc(tokenId).get();
+
+  // if wallet doesnt exist, initiate one with 0 points
+  if (!doc.exists) {
+    return res.status(404).json(createApiResponse(false, "Token not found"));
+  }
+
+  res.json(createApiResponse(true, "Success", doc.data()));
+};
+
+export const listTokens: RequestHandler = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const sortDirection = ((req.query.sortDirection as string) || "desc") as
+      | "asc"
+      | "desc";
+    const lastPageToken = (req.query.lastPageToken as string) || null;
+
+    let query = db
+      .collection("tokens")
+      .orderBy("createdAt", sortDirection)
+      .limit(limit);
+
+    if (lastPageToken) {
+      const lastDoc = await db.collection("tokens").doc(lastPageToken).get();
+      if (lastDoc.exists) {
+        query = query.startAfter(lastDoc);
+      }
+    }
+
+    const snapshot = await query.get();
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(
+      createApiResponse(true, "Success", {
+        result: data,
+        lastPageToken: data[data.length - 1]?.id || null,
+      })
+    );
+  } catch (err) {
+    console.error("Error fetching tokens:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch tokens" });
+  }
+};
