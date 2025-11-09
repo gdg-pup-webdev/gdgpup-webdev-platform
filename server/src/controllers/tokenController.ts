@@ -59,15 +59,13 @@ export const createToken: RequestHandler = async (req, res) => {
 export const getToken: RequestHandler = async (req, res) => {
   const tokenId = req.params.tokenId;
 
-  // check if wallet exists
-  const doc = await db.collection("tokens").doc(tokenId).get();
+  const token = await fetchTokenFromDb(tokenId);
 
-  // if wallet doesnt exist, initiate one with 0 points
-  if (!doc.exists) {
+  if (!token) {
     return res.status(404).json(createApiResponse(false, "Token not found"));
   }
 
-  res.json(createApiResponse(true, "Success", doc.data()));
+  res.json(createApiResponse(true, "Success", token));
 };
 
 export const listTokens: RequestHandler = async (req, res) => {

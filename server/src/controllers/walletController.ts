@@ -2,19 +2,21 @@ import { RequestHandler } from "express";
 import { db } from "../lib/firebase.js";
 import { Wallet } from "../types/Wallet.js";
 import { createApiResponse } from "../utils/apiRespones.js";
-import { isUserExists } from "../utils/firebaseUtils.js";
+import { isUserValid } from "../utils/firebaseUtils.js";
 import { randomUUID } from "crypto";
 import { JournalEntry } from "../types/Journal.js";
-import {
+import { 
   fetchWalletFromDb,
   incrementWalletValue,
 } from "../services/walletService.js";
+import { fetchUserFromDb } from "../services/userService.js";
 
 export const getWalletAction: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
-  // check if user exists using firebase auth
-  if (!(await isUserExists(uid))) {
+  // check if user exists
+  const user = await fetchUserFromDb(uid);
+  if (!user) {
     res.status(404).json(createApiResponse(false, "User not found"));
     return;
   }
@@ -22,56 +24,64 @@ export const getWalletAction: RequestHandler = async (req, res) => {
   // use wallet service to get user wallet
   const wallet = await fetchWalletFromDb(uid);
 
+  // returning the response
   res.json(createApiResponse(true, "Success", wallet));
 };
 
 export const incrementWalletPoints: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
+  const payload: { increment: number } = req.body.payload;
+  const increment = payload.increment;
 
-  const body = req.body;
-  const payload: { increment: number } = body.payload;
-
-  const wallet = await fetchWalletFromDb(uid);
-  if (!wallet) {
-    res.status(404).json(createApiResponse(false, "Wallet not found"));
+  // check if user exists
+  const user = await fetchUserFromDb(uid);
+  if (!user) {
+    res.status(404).json(createApiResponse(false, "User not found"));
     return;
   }
 
-  const newWallet = await incrementWalletValue(wallet, payload.increment, uid);
+  // get the wallet and increment it
+  const wallet = await fetchWalletFromDb(uid);
+  const newWallet = await incrementWalletValue(wallet, increment, uid);
 
+  // returning the response
   res.json(createApiResponse(true, "Success", { newWallet: newWallet }));
 };
 
 export const listWallets: RequestHandler = async (req, res) => {
   try {
+    // get query parameters for filtering and pagination
     const limit = parseInt(req.query.limit as string) || 10;
     const sortDirection = ((req.query.sortDirection as string) || "desc") as
       | "asc"
       | "desc";
     const lastPageToken = (req.query.lastPageToken as string) || null;
 
-    let query = db
-      .collection("wallets")
-      .orderBy("points", sortDirection)
-      .limit(limit);
+   // building the query
+  let query = db
+    .collection("wallets")
+    .orderBy("points", sortDirection)
+    .limit(limit);
 
-    if (lastPageToken) {
-      const lastDoc = await db.collection("wallets").doc(lastPageToken).get();
-      if (lastDoc.exists) {
-        query = query.startAfter(lastDoc);
-      }
+  if (lastPageToken) {
+    const lastDoc = await db.collection("wallets").doc(lastPageToken).get();
+    if (lastDoc.exists) {
+      query = query.startAfter(lastDoc);
     }
+  }
 
-    const snapshot = await query.get();
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+  // executing the query
+  const snapshot = await query.get();
+  const data = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 
+    // returning the response
     res.json(
       createApiResponse(true, "Success", {
-        result: data,
-        lastPageToken: data[data.length - 1]?.id || null,
+        result:data,
+        lastPageToken:  data[data.length - 1]?.id || null,
       })
     );
   } catch (err) {
@@ -82,15 +92,23 @@ export const listWallets: RequestHandler = async (req, res) => {
 
 export const listWalletHistory: RequestHandler = async (req, res) => {
   try {
-    console.log("hello worldd");
     const uid = req.params.uid;
 
+    // check if user exists
+    const user = await fetchUserFromDb(uid);
+    if (!user) {
+      res.status(404).json(createApiResponse(false, "User not found"));
+      return;
+    }
+
+    // get query parameters for filtering and pagination
     const limit = parseInt(req.query.limit as string) || 10;
     const sortDirection = ((req.query.sortDirection as string) || "desc") as
       | "asc"
       | "desc";
     const lastPageToken = (req.query.lastPageToken as string) || null;
 
+    // building the query
     let query = db
       .collection("wallets")
       .doc(uid)
@@ -105,12 +123,14 @@ export const listWalletHistory: RequestHandler = async (req, res) => {
       }
     }
 
+    // executing the query
     const snapshot = await query.get();
     const data = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
 
+    // returning the response
     res.json(
       createApiResponse(true, "Success", {
         result: data,
@@ -126,6 +146,13 @@ export const listWalletHistory: RequestHandler = async (req, res) => {
 export const getWalletHistoryEntry: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
   const entryId = req.params.entryId;
+
+  // check if user exists
+  const user = await fetchUserFromDb(uid);
+  if (!user) {
+    res.status(404).json(createApiResponse(false, "User not found"));
+    return;
+  }
 
   // check if entry exists
   const doc = await db

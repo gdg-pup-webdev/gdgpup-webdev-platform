@@ -2,7 +2,7 @@ import { auth } from "../lib/firebase.js";
 
  
 
-export async function isUserExists(uid: string): Promise<boolean> {
+export async function isUserValid(uid: string): Promise<boolean> {
   try {
     const userRecord = await auth.getUser(uid);
     // If no error, user exists
