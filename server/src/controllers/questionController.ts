@@ -15,10 +15,7 @@ export const createQuestion: RequestHandler = async (req, res) => {
   const user = req.user;
 
   // STEP 1: retriving the createQuestionDTO
-  const body = req.body as
-    | ApiRequestBody<CreateQuestionDTO>
-    | CreateQuestionDTO
-    | undefined;
+  const body = req.body as ApiRequestBody<CreateQuestionDTO>
 
   if (!body) {
     return res
@@ -26,16 +23,14 @@ export const createQuestion: RequestHandler = async (req, res) => {
       .json(createApiResponse(false, "Request body is required"));
   }
 
-  const createQuestionDTO =
-    "payload" in body
-      ? (body as ApiRequestBody<CreateQuestionDTO>).payload
-      : (body as CreateQuestionDTO);
+  const createQuestionDTO = body.payload;
 
   if (!createQuestionDTO) {
     return res
       .status(400)
       .json(createApiResponse(false, "Invalid question payload"));
   }
+    
 
   const scheduledDate = Date.UTC(
     createQuestionDTO.scheduledYear,

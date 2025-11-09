@@ -4,8 +4,9 @@ export type QuestionCore = {
   title: string;
   question: string;
   answer: string;
-  explanation?: string;
-  category?: string;
+  explanation: string;
+  category: string;
+  tags?: string[];
   options: Array<{
     id: string;        // stable key (e.g., “A”, “B”, UUID)
     text: string;      // what the user sees
