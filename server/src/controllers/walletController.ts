@@ -11,7 +11,7 @@ import {
 } from "../services/walletService.js";
 import { fetchUserFromDb } from "../services/userService.js";
 
-export const getWalletAction: RequestHandler = async (req, res) => {
+export const getWallet: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
   // check if user exists

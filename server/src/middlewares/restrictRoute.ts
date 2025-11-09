@@ -1,5 +1,4 @@
 import { RequestHandler } from "express";
-import { auth } from "../lib/firebase.js";
 
 export const restrictRoute = (allowedRoles: string[]) => {
   const middleware: RequestHandler = async (req, res, next) => {
@@ -19,7 +18,7 @@ export const restrictRoute = (allowedRoles: string[]) => {
       next();
     } catch (error) {
       console.error("Token verification failed:", error);
-      req.user = null;
+      req.user = undefined;
       return res.status(401).json({ error: "Invalid or expired token" });
     }
   };

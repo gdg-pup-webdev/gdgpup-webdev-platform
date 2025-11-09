@@ -1,6 +1,6 @@
 import express from "express";
-import { authRouter } from "./routes/authRoutes.js";
-import { verifyToken } from "./middlewares/verifyToken.js"; 
+import { userRouter } from "./routes/userRoute.js";
+import { checkForToken } from "./middlewares/verifyToken.js"; 
 import { walletsRouter } from "./routes/walletRoutes.js";
 import { tokenRouter } from "./routes/tokenRoutes.js";
 
@@ -12,10 +12,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Processing tokens
-app.use(verifyToken);
+app.use(checkForToken);
 
 // Routes
-app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
 app.use("/api/wallets", walletsRouter);
 app.use("/api/tokens", tokenRouter);
 
