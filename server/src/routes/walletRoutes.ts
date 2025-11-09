@@ -12,6 +12,7 @@ import {
   listWalletHistory,
   listWallets,
 } from "../controllers/walletController.js";
+import { ensureUserExists } from "../middlewares/verifyToken.js";
 
 export const walletsRouter = Router();
 

@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { createApiResponse } from "../utils/apiRespones.js";
 import { auth } from "../lib/firebase.js";
 import { fetchUserFromDb } from "../services/userService.js";
+import { UserClaims } from "../types/UserClaims.js";
 
 export const getUserCustomClaims: RequestHandler = async (req, res) => {
   const userId = req.params.uid;
@@ -22,9 +23,9 @@ export const getUserCustomClaims: RequestHandler = async (req, res) => {
   }
 
   // get claims. initiate it if it doesnt exist
-  let customClaims = user.customClaims;
+  let customClaims = user.customClaims as UserClaims;
   if (!customClaims || Object.keys(customClaims).length === 0) {
-    const defaultClaims = { role: "user" };
+    const defaultClaims : UserClaims = { role: "user" };
     await auth.setCustomUserClaims(user.uid, defaultClaims);
     customClaims = defaultClaims;
   }

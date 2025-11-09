@@ -29,6 +29,13 @@ export const getWallet: RequestHandler = async (req, res) => {
 };
 
 export const incrementWalletPoints: RequestHandler = async (req, res) => {
+  const senderUser=  req.user;
+  if (!senderUser) {
+    res.status(401).json(createApiResponse(false, "unauthenticated"));
+    return;
+  }
+
+
   const uid = req.params.uid;
   const payload: { increment: number } = req.body.payload;
   const increment = payload.increment;
@@ -39,6 +46,13 @@ export const incrementWalletPoints: RequestHandler = async (req, res) => {
     res.status(404).json(createApiResponse(false, "User not found"));
     return;
   }
+
+  // only owner user & admin can increment wallet points
+  if (user.uid !== senderUser.uid && senderUser.customClaims?.role !== "admin") {
+    res.status(403).json(createApiResponse(false, "Unauthorized"));
+    return;
+  }
+
 
   // get the wallet and increment it
   const wallet = await fetchWalletFromDb(uid);

@@ -9,7 +9,8 @@ export const checkForToken: RequestHandler = async (req, res, next) => {
     // If no header, mark user as null and continue (optional)
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       req.user = undefined;
-      return res.status(401).json({ error: "No token provided" });
+      req.decodedToken = undefined;
+      return next();
     }
 
     const token = authHeader.split("Bearer ")[1];

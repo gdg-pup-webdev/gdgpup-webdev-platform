@@ -11,10 +11,11 @@ import {
   listTokens,
   voidToken,
 } from "../controllers/tokenController.js";
+import { restrictRoute } from "../middlewares/restrictRoute.js";
 
 export const tokenRouter = Router();
 
-tokenRouter.post("/", createToken);
+tokenRouter.post("/", restrictRoute(["admin"]), createToken);
 
 tokenRouter.get("/:tokenId", getToken);
 
