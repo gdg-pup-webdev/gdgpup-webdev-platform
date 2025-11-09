@@ -6,7 +6,7 @@ import { isUserExists } from "../utils/firebaseUtils.js";
 import { Journal, JournalEntry } from "../types/Journal.js";
 import { randomUUID } from "crypto";
 import {
-  getWallet,
+  getWalletAction,
   getWalletHistoryEntry,
   incrementWalletPoints,
   listWalletHistory,
@@ -15,7 +15,7 @@ import {
 
 export const walletsRouter = Router();
 
-walletsRouter.get("/:uid", getWallet);
+walletsRouter.get("/:uid", getWalletAction);
 
 walletsRouter.patch("/:uid/increment", incrementWalletPoints);
 

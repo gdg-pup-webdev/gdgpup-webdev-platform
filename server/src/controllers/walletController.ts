@@ -5,10 +5,12 @@ import { createApiResponse } from "../utils/apiRespones.js";
 import { isUserExists } from "../utils/firebaseUtils.js";
 import { randomUUID } from "crypto";
 import { JournalEntry } from "../types/Journal.js";
+import {
+  fetchWalletFromDb,
+  incrementWalletValue,
+} from "../services/walletService.js";
 
-
-
-export const getWallet : RequestHandler = async (req, res) => {
+export const getWalletAction: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
   // check if user exists using firebase auth
@@ -17,66 +19,30 @@ export const getWallet : RequestHandler = async (req, res) => {
     return;
   }
 
-  // check if wallet exists
-  const doc = await db.collection("wallets").doc(uid).get();
+  // use wallet service to get user wallet
+  const wallet = await fetchWalletFromDb(uid);
 
-  // if wallet doesnt exist, initiate one with 0 points
-  if (!doc.exists) {
-    const defaultWallet: Wallet = {
-      id: uid,
-      points: 0,
-    };
-    await db.collection("wallets").doc(uid).set(defaultWallet);
+  res.json(createApiResponse(true, "Success", wallet));
+};
 
-    res.json(createApiResponse(true, "New wallet created", defaultWallet));
-    return;
-  }
-
-  res.json(createApiResponse(true, "Success", doc.data()));
-}
-
-export const incrementWalletPoints : RequestHandler =  async (req, res) => {
+export const incrementWalletPoints: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
   const body = req.body;
   const payload: { increment: number } = body.payload;
 
-  // check if wallet exists
-  const doc = await db.collection("wallets").doc(uid).get();
-
-  if (!doc.exists) {
+  const wallet = await fetchWalletFromDb(uid);
+  if (!wallet) {
     res.status(404).json(createApiResponse(false, "Wallet not found"));
     return;
   }
 
-  const wallet = doc.data() as Wallet;
-  const newPoints = wallet.points + payload.increment;
+  const newWallet = await incrementWalletValue(wallet, payload.increment, uid);
 
-  await db.collection("wallets").doc(uid).update({ points: newPoints });
+  res.json(createApiResponse(true, "Success", { newWallet: newWallet }));
+};
 
-  // create history journal entry
-  const entryId = randomUUID();
-  const entry: JournalEntry = {
-    id: entryId,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    actors: [{ uid, role: "user" }],
-    title: "Incremented points",
-    content: `You have incremented your points by ${payload.increment}`,
-  };
-  await db
-    .collection("wallets")
-    .doc(uid)
-    .collection("history")
-    .doc(entryId)
-    .set(entry);
-
-  console.log("incremented wallet", entry);
-
-  res.json(createApiResponse(true, "Success", { points: newPoints }));
-}
-
-export const listWallets : RequestHandler = async (req, res) => {
+export const listWallets: RequestHandler = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     const sortDirection = ((req.query.sortDirection as string) || "desc") as
@@ -112,9 +78,9 @@ export const listWallets : RequestHandler = async (req, res) => {
     console.error("Error fetching blogs:", err);
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
-}
+};
 
-export const listWalletHistory : RequestHandler = async (req, res) => {
+export const listWalletHistory: RequestHandler = async (req, res) => {
   try {
     console.log("hello worldd");
     const uid = req.params.uid;
@@ -155,9 +121,9 @@ export const listWalletHistory : RequestHandler = async (req, res) => {
     console.error("Error fetching blogs:", err);
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
-}
+};
 
-export const getWalletHistoryEntry : RequestHandler = async (req, res) => {
+export const getWalletHistoryEntry: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
   const entryId = req.params.entryId;
 
@@ -176,4 +142,4 @@ export const getWalletHistoryEntry : RequestHandler = async (req, res) => {
   }
 
   res.json(createApiResponse(true, "Success", doc.data()));
-}
+};

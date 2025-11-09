@@ -4,6 +4,12 @@ import { CreateTokenDTO, Token, TokenCore } from "../types/Token.js";
 import { generateTokenCode } from "../utils/tokenUtil.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
+import {
+  fetchWalletFromDb,
+  incrementWalletValue,
+} from "../services/walletService.js";
+import { fetchTokenFromDb } from "../services/tokenService.js";
+import { fetchUserFromDb } from "../services/userService.js";
 
 export const createToken: RequestHandler = async (req, res) => {
   if (!req.user) {
@@ -100,4 +106,87 @@ export const listTokens: RequestHandler = async (req, res) => {
     console.error("Error fetching tokens:", err);
     res.status(500).json({ success: false, message: "Failed to fetch tokens" });
   }
+};
+
+export const voidToken: RequestHandler = async (req, res) => {
+  const tokenId = req.params.tokenId;
+
+  // check if token exists
+  const doc = await db.collection("tokens").doc(tokenId).get();
+
+  if (!doc.exists) {
+    return res.status(404).json(createApiResponse(false, "Token not found"));
+  }
+
+  const token = doc.data() as Token;
+
+  // check if token is already voided
+  if (!token.isValid) {
+    return res
+      .status(400)
+      .json(createApiResponse(true, "Token is already voided", token));
+  }
+
+  // void the token
+  const update = {
+    isValid: false,
+    updatedAt: Date.now(),
+  };
+  const voidedToken: Token = {
+    ...token,
+    ...update,
+  };
+  await db.collection("tokens").doc(tokenId).update(update);
+
+  res.json(createApiResponse(true, "Token voided successfully", voidedToken));
+};
+
+export const claimToken: RequestHandler = async (req, res) => {
+  // get user id
+  const body = req.body as ApiRequestBody<{ userId: string }>;
+  const userId = body.payload.userId;
+  const user = await fetchUserFromDb(userId);
+  if (!user) {
+    return res.status(404).json(createApiResponse(false, "User not found"));
+  }
+
+  // get user wallet
+  const wallet = await fetchWalletFromDb(userId);
+  if (!wallet) {
+    return res.status(404).json(createApiResponse(false, "Wallet not found"));
+  }
+
+  // get token
+  const tokenId = req.params.tokenId;
+  const token = await fetchTokenFromDb(tokenId);
+  if (!token) {
+    return res.status(404).json(createApiResponse(false, "Token not found"));
+  }
+
+  // check if token is valid
+  if (!token.isValid) {
+    return res.status(400).json(createApiResponse(false, "Token is invalid"));
+  }
+
+  // check if user has already claimed the token
+  if (token.claimants.some((claimant) => claimant.uid === userId)) {
+    return res
+      .status(400)
+      .json(createApiResponse(false, "User has already claimed the token"));
+  }
+
+  // add user to token claimants
+  token.claimants.push({ uid: userId, dateClaimed: Date.now() });
+  await db
+    .collection("tokens")
+    .doc(tokenId)
+    .update({ claimants: token.claimants });
+
+  // increment user walletpoints
+  const newWallet = await incrementWalletValue(wallet, token.value, userId);
+
+  // return new wallet data and new token data
+  res.json(
+    createApiResponse(true, "Success", { newWallet: newWallet, token: token })
+  );
 };
