@@ -1,5 +1,5 @@
 export type Metatype = {
   id: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: number;
+  updatedAt: number;
 };

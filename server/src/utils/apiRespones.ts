@@ -1,8 +1,5 @@
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data?: T;
-}
+import { ApiResponse } from "../types/ApiInterface.js";
+
 
 export function createApiResponse<T>(
   success: boolean,
