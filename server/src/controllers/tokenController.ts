@@ -8,7 +8,7 @@ import {
   fetchWalletFromDb,
   incrementWalletValue,
 } from "../services/walletService.js";
-import { fetchTokenFromDb } from "../services/tokenService.js"; 
+import { fetchTokenFromDb } from "../services/tokenService.js";
 
 export const createToken: RequestHandler = async (req, res) => {
   const user = req.user!;
@@ -79,44 +79,57 @@ export const getToken: RequestHandler = async (req, res) => {
 };
 
 export const listTokens: RequestHandler = async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 10;
-    const sortDirection = ((req.query.sortDirection as string) || "desc") as
-      | "asc"
-      | "desc";
-    const lastPageToken = (req.query.lastPageToken as string) || null;
+  const user = req.user!;
+  const role = user.customClaims?.role || "guest";
 
-    let query = db
-      .collection("tokens")
-      .orderBy("createdAt", sortDirection)
-      .limit(limit);
-
-    if (lastPageToken) {
-      const lastDoc = await db.collection("tokens").doc(lastPageToken).get();
-      if (lastDoc.exists) {
-        query = query.startAfter(lastDoc);
-      }
-    }
-
-    const snapshot = await query.get();
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    res.json(
-      createApiResponse(true, "Success", {
-        result: data,
-        lastPageToken: data[data.length - 1]?.id || null,
-      })
-    );
-  } catch (err) {
-    console.error("Error fetching tokens:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch tokens" });
+  // PERMISSIONS:
+  // Must be an admin
+  if (role !== "admin") {
+    return res.status(403).json(createApiResponse(false, "Forbidden."));
   }
+
+  const limit = parseInt(req.query.limit as string) || 10;
+  const sortDirection = ((req.query.sortDirection as string) || "desc") as
+    | "asc"
+    | "desc";
+  const lastPageToken = (req.query.lastPageToken as string) || null;
+
+  let query = db
+    .collection("tokens")
+    .orderBy("createdAt", sortDirection)
+    .limit(limit);
+
+  if (lastPageToken) {
+    const lastDoc = await db.collection("tokens").doc(lastPageToken).get();
+    if (lastDoc.exists) {
+      query = query.startAfter(lastDoc);
+    }
+  }
+
+  const snapshot = await query.get();
+  const data = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  res.json(
+    createApiResponse(true, "Success", {
+      result: data,
+      lastPageToken: data[data.length - 1]?.id || null,
+    })
+  );
 };
 
 export const voidToken: RequestHandler = async (req, res) => {
+  const user = req.user!;
+  const role = user.customClaims?.role || "guest";
+
+  // PERMISSIONS:
+  // Must be an admin
+  if (role !== "admin") {
+    return res.status(403).json(createApiResponse(false, "Forbidden."));
+  }
+
   const tokenId = req.params.tokenId;
 
   // check if token exists

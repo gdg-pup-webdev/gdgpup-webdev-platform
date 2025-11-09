@@ -33,13 +33,12 @@ export const getWallet: RequestHandler = async (req, res) => {
 };
 
 export const incrementWalletPoints: RequestHandler = async (req, res) => {
-  const user = req.user!;
-  const role = user.customClaims?.role || "guest";
+  const user = req.user!; 
   const uid = req.params.uid;
 
   // PERMISSIONS:
-  // Must be authenticated and accessing own claims, except for admins
-  if (role !== "admin" && user.uid !== uid) {
+  // Must be authenticated and accessing own claims 
+  if ( user.uid !== uid) {
     return res.status(403).json(createApiResponse(false, "Forbidden."));
   }
 
