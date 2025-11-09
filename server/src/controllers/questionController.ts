@@ -173,6 +173,11 @@ export const getDailyQuestion: RequestHandler = async (req, res) => {
   }
 };
 
+// POST /api/questions/{questionId}/submit-answer/?answer=answer
+export const submitAnswer: RequestHandler = async (req, res) => {
+  // TO DO: implement this function
+}
+
 // return list of questions
 // query parameters: limit, sortDirection, lastPageToken
 export const listQuestions: RequestHandler = async (req, res) => {
@@ -210,3 +215,18 @@ export const listQuestions: RequestHandler = async (req, res) => {
   // Return response
   return res.status(200).json(createApiResponse(true, "Success", data));
 };
+
+// delete specific question
+// DELETE /questions/{questionId}
+export const deleteQuestion: RequestHandler = async (req, res) => {
+}
+
+// update specific question
+// PUT /questions/{questionId}
+export const updateQuestion: RequestHandler = async (req, res) => {
+}
+
+// PATCH /questions/userHistory/{userId}
+export const getAnswerHistory: RequestHandler = async (req, res) => {
+  // TO DO: implement this function
+}
