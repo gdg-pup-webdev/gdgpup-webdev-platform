@@ -1,13 +1,11 @@
-import { Router } from "express";
+import { RequestHandler } from "express";
 import { ApiRequestBody } from "../types/ApiInterface.js";
 import { CreateTokenDTO, Token, TokenCore } from "../types/Token.js";
 import { generateTokenCode } from "../utils/tokenUtil.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
 
-export const tokenRouter = Router();
-
-tokenRouter.post("/", async (req, res) => {
+export const createToken: RequestHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "No user found" });
   }
@@ -50,4 +48,4 @@ tokenRouter.post("/", async (req, res) => {
   await db.collection("tokens").doc(tokenCode).set(token);
 
   res.json(createApiResponse(true, "Success", token));
-});
+};

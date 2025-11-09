@@ -1,14 +1,14 @@
-import { Router } from "express";
-import { createApiResponse } from "../utils/apiRespones.js";
+import { RequestHandler } from "express";
+import { db } from "../lib/firebase.js";
 import { Wallet } from "../types/Wallet.js";
-import { auth, db } from "../lib/firebase.js";
+import { createApiResponse } from "../utils/apiRespones.js";
 import { isUserExists } from "../utils/firebaseUtils.js";
-import { Journal, JournalEntry } from "../types/Journal.js";
 import { randomUUID } from "crypto";
+import { JournalEntry } from "../types/Journal.js";
 
-export const walletsRouter = Router();
 
-walletsRouter.get("/:uid", async (req, res) => {
+
+export const getWallet : RequestHandler = async (req, res) => {
   const uid = req.params.uid;
 
   // check if user exists using firebase auth
@@ -33,9 +33,12 @@ walletsRouter.get("/:uid", async (req, res) => {
   }
 
   res.json(createApiResponse(true, "Success", doc.data()));
-});
+}
 
-walletsRouter.patch("/:uid/increment", async (req, res) => {
+
+
+
+export const incrementWalletPoints : RequestHandler =  async (req, res) => {
   const uid = req.params.uid;
 
   const body = req.body;
@@ -74,9 +77,11 @@ walletsRouter.patch("/:uid/increment", async (req, res) => {
   console.log("incremented wallet", entry);
 
   res.json(createApiResponse(true, "Success", { points: newPoints }));
-});
+}
 
-walletsRouter.get("/", async (req, res) => {
+
+
+export const listWallets : RequestHandler = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     const sortDirection = ((req.query.sortDirection as string) || "desc") as
@@ -112,9 +117,10 @@ walletsRouter.get("/", async (req, res) => {
     console.error("Error fetching blogs:", err);
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
-});
+}
 
-walletsRouter.get("/:uid/history", async (req, res) => {
+
+export const listWalletHistory : RequestHandler = async (req, res) => {
   try {
     console.log("hello worldd");
     const uid = req.params.uid;
@@ -155,9 +161,11 @@ walletsRouter.get("/:uid/history", async (req, res) => {
     console.error("Error fetching blogs:", err);
     res.status(500).json({ success: false, message: "Failed to fetch blogs" });
   }
-});
+}
 
-walletsRouter.get("/:uid/history/:entryId", async (req, res) => {
+
+
+export const getWalletHistoryEntry : RequestHandler = async (req, res) => {
   const uid = req.params.uid;
   const entryId = req.params.entryId;
 
@@ -176,43 +184,4 @@ walletsRouter.get("/:uid/history/:entryId", async (req, res) => {
   }
 
   res.json(createApiResponse(true, "Success", doc.data()));
-});
-
-// walletsRouter.get("/:uid/history", async (req, res) => {
-//   const uid = req.params.uid;
-
-//   console.log(uid);
-
-//   // check if user exists using firebase auth
-//   if (!(await isUserExists(uid))) {
-//     res.status(404).json(createApiResponse(false, "User not found"));
-//     return;
-//   }
-
-//   // check if history exists
-//   const doc = await db
-//     .collection("wallets")
-//     .doc(uid)
-//     .collection("history")
-//     .doc(uid)
-//     .get();
-
-//   // if wallet doesnt exist, initiate one with 0 points
-//   if (!doc.exists) {
-//     const defaultHistory: Journal = {
-//       id: uid,
-//       entries: [],
-//     };
-//     await db
-//       .collection("wallets")
-//       .doc(uid)
-//       .collection("history")
-//       .doc(uid)
-//       .set(defaultHistory);
-
-//     res.json(createApiResponse(true, "New history created", defaultHistory));
-//     return;
-//   }
-
-//   res.json(createApiResponse(true, "Success", doc.data()));
-// });
+}

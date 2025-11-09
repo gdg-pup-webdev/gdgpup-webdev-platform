@@ -1,9 +1,8 @@
 import express from "express";
-import { authRouter } from "./routes/auth.js";
-import { verifyToken } from "./middlewares/verifyToken.js";
-import { restrictRoute } from "./middlewares/restrictRoute.js";
-import { walletsRouter } from "./routes/wallets.js";
-import { tokenRouter } from "./routes/tokens.js";
+import { authRouter } from "./routes/authRoutes.js";
+import { verifyToken } from "./middlewares/verifyToken.js"; 
+import { walletsRouter } from "./routes/walletRoutes.js";
+import { tokenRouter } from "./routes/tokenRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 8000;

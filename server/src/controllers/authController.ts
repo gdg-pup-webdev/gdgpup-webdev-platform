@@ -1,10 +1,8 @@
-import { Router } from "express";
-import { auth } from "../lib/firebase.js";
+import { RequestHandler } from "express";
 import { createApiResponse } from "../utils/apiRespones.js";
+import { auth } from "../lib/firebase.js";
 
-export const authRouter = Router();
-
-authRouter.get("/custom-claims", async (req, res) => {
+export const getUserCustomClaims: RequestHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json(createApiResponse(false, "No user found"));
   }
@@ -19,9 +17,13 @@ authRouter.get("/custom-claims", async (req, res) => {
   }
 
   res.json(createApiResponse(true, "Success", customClaims));
-});
+};
 
-authRouter.get("/null-claims", async (req, res) => {
+
+
+
+
+export const nullifyUserCustomClaims: RequestHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json(createApiResponse(false, "No user found"));
   }
@@ -30,4 +32,4 @@ authRouter.get("/null-claims", async (req, res) => {
   await auth.setCustomUserClaims(user.uid, null);
 
   res.json(createApiResponse(true, "Success"));
-});
+};
