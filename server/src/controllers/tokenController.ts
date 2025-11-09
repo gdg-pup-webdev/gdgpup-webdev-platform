@@ -8,14 +8,17 @@ import {
   fetchWalletFromDb,
   incrementWalletValue,
 } from "../services/walletService.js";
-import { fetchTokenFromDb } from "../services/tokenService.js";
-import { fetchUserFromDb } from "../services/userService.js";
+import { fetchTokenFromDb } from "../services/tokenService.js"; 
 
 export const createToken: RequestHandler = async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "No user found" });
+  const user = req.user!;
+  const role = user.customClaims?.role || "guest";
+
+  // PERMISSIONS:
+  // Must be an admin
+  if (role !== "admin") {
+    return res.status(403).json(createApiResponse(false, "Forbidden."));
   }
-  const user = req.user;
 
   // STEP 1: retriving the createTokenDTO
   const body = req.body as ApiRequestBody<CreateTokenDTO>;
@@ -23,14 +26,21 @@ export const createToken: RequestHandler = async (req, res) => {
 
   // create new token code
   let tokenCode = "";
+  let codeGenerated = false;
   for (let i = 0; i < 10; i++) {
     tokenCode = generateTokenCode();
     // check if it already exists
     const doc = await db.collection("tokens").doc(tokenCode).get();
     if (!doc.exists) {
       // if it doesn't exist, break out of the loop
+      codeGenerated = true;
       break;
     }
+  }
+  if (!codeGenerated) {
+    return res
+      .status(500)
+      .json(createApiResponse(false, "Failed to generate token code"));
   }
 
   // STEP 2: creating the core token object
@@ -38,8 +48,8 @@ export const createToken: RequestHandler = async (req, res) => {
     ...createTokenDTO,
     code: tokenCode,
     isValid: true,
-    creatorUid: user.uid,
-    claimants: [],
+    createdBy: user.uid,
+    claimHistory: [],
   };
 
   // STEP 3: creating the complete token object
@@ -140,19 +150,18 @@ export const voidToken: RequestHandler = async (req, res) => {
 };
 
 export const claimToken: RequestHandler = async (req, res) => {
-  // get user id
-  const body = req.body as ApiRequestBody<{ userId: string }>;
-  const userId = body.payload.userId;
-  const user = await fetchUserFromDb(userId);
+  const user = req.user;
+
+  // PERMISSIONS:
+  // Must be authenticated
   if (!user) {
-    return res.status(404).json(createApiResponse(false, "User not found"));
+    return res.status(403).json(createApiResponse(false, "Unauthorized."));
   }
 
   // get user wallet
-  const wallet = await fetchWalletFromDb(userId);
-  if (!wallet) {
-    return res.status(404).json(createApiResponse(false, "Wallet not found"));
-  }
+
+  const uid = user?.uid;
+  const wallet = await fetchWalletFromDb(uid);
 
   // get token
   const tokenId = req.params.tokenId;
@@ -167,21 +176,21 @@ export const claimToken: RequestHandler = async (req, res) => {
   }
 
   // check if user has already claimed the token
-  if (token.claimants.some((claimant) => claimant.uid === userId)) {
+  if (token.claimHistory.some((history) => history.uid === uid)) {
     return res
       .status(400)
       .json(createApiResponse(false, "User has already claimed the token"));
   }
 
   // add user to token claimants
-  token.claimants.push({ uid: userId, dateClaimed: Date.now() });
+  token.claimHistory.push({ uid: uid, date: Date.now() });
   await db
     .collection("tokens")
     .doc(tokenId)
-    .update({ claimants: token.claimants });
+    .update({ claimants: token.claimHistory });
 
   // increment user walletpoints
-  const newWallet = await incrementWalletValue(wallet, token.value, userId);
+  const newWallet = await incrementWalletValue(wallet, token.value);
 
   // return new wallet data and new token data
   res.json(

@@ -6,12 +6,12 @@ export type TokenCore = {
   expirationDate?: number;
 
   // core metadata
-  creatorUid: string;
+  createdBy: string;
   isValid: boolean;
   code: string;
-  claimants: {
+  claimHistory: {
     uid: string;
-    dateClaimed: number;
+    date: number;
   }[];
 };
 
@@ -21,6 +21,3 @@ export type CreateTokenDTO = Omit<
   TokenCore,
   keyof Metatype | "code" | "creatorUid" | "claimants" | "isValid"
 >;
-
-
-

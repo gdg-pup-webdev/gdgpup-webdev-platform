@@ -1,36 +1,36 @@
 import { RequestHandler } from "express";
 import { auth } from "../lib/firebase.js";
 import { fetchUserFromDb } from "../services/userService.js";
+import { createApiResponse } from "../utils/apiRespones.js";
 
-export const checkForToken: RequestHandler = async (req, res, next) => {
+export const verifyToken: RequestHandler = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  // If no header, mark user as undefined and continue (optional)
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    req.user = undefined;
+    req.decodedToken = undefined;
+    return next();
+  }
+
+  // Extract the token and user
   try {
-    const authHeader = req.headers.authorization;
-
-    // If no header, mark user as null and continue (optional)
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      req.user = undefined;
-      req.decodedToken = undefined;
-      return next();
-    }
-
     const token = authHeader.split("Bearer ")[1];
     const decoded = await auth.verifyIdToken(token);
     const user = await fetchUserFromDb(decoded.uid);
-
     req.user = user;
     req.decodedToken = decoded;
-
-    next();
+    return next();
   } catch (error) {
-    console.error("Token verification failed:", error);
     req.user = undefined;
-    return res.status(401).json({ error: "Invalid or expired token" });
+    req.decodedToken = undefined;
+    return next();
   }
 };
 
 export const ensureUserExists: RequestHandler = async (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ error: "No user found" });
+    return res.status(401).json(createApiResponse(false, "Unauthorized"));
   }
   next();
 };
