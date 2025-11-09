@@ -219,6 +219,37 @@ export const listQuestions: RequestHandler = async (req, res) => {
 // delete specific question
 // DELETE /questions/{questionId}
 export const deleteQuestion: RequestHandler = async (req, res) => {
+  // Check for authenticated user
+  if (!req.user) {
+    return res.status(401).json({ error: "No user found" });
+  }
+
+  // Get questionId from params
+  const questionId = req.params.questionId;
+
+  try {
+    // Delete question from database
+    const questionDoc = db.collection("questions").doc(questionId);
+    const questionSnapshot = await questionDoc.get();
+    if (!questionSnapshot.exists) {
+      // Question not found
+      return res
+        .status(404)
+        .json(createApiResponse(false, "Question not found"));
+    }
+    await questionDoc.delete();
+
+    // Return success response
+    return res
+      .status(200)
+      .json(createApiResponse(true, "Question deleted successfully"));
+  } catch (error) {
+    // Log the error
+    console.error("Failed to delete question", error);
+    return res
+      .status(500)
+      .json(createApiResponse(false, "Failed to delete question"));
+  }
 }
 
 // update specific question
