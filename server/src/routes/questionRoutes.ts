@@ -5,4 +5,4 @@ export const questionRouter = Router();
 
 // Define your question routes here
 questionRouter.post("/", createQuestion);
-questionRouter.get("/:questionId", getQuestion); // Example additional route
+questionRouter.get("/:questionId", getQuestion);
