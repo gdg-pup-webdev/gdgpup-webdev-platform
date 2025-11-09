@@ -172,3 +172,41 @@ export const getDailyQuestion: RequestHandler = async (req, res) => {
       .json(createApiResponse(false, "Failed to get question"));
   }
 };
+
+// return list of questions
+// query parameters: limit, sortDirection, lastPageToken
+export const listQuestions: RequestHandler = async (req, res) => {
+  // Check for authenticated user
+  if (!req.user) {
+    return res.status(401).json({ error: "No user found" });
+  }
+
+  // Get query parameters
+  const limit = parseInt(req.query.limit as string, 10) || 10;
+  const sortDirection = ((req.query.sortDirection as string) || "desc") as
+    | "asc"
+    | "desc";
+  const lastPageToken = (req.query.lastPageToken as string) || null;
+
+  // Build query
+  let query = db
+    .collection("questions")
+    .orderBy("scheduledDate", sortDirection)
+    .limit(limit);
+  if (lastPageToken) {
+    const lastDoc = await db.collection("questions").doc(lastPageToken).get();
+    if (lastDoc.exists) {
+      query = query.startAfter(lastDoc);
+    }
+  }
+
+  // Execute query
+  const snapshot = await query.get();
+  const data = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  // Return response
+  return res.status(200).json(createApiResponse(true, "Success", data));
+};

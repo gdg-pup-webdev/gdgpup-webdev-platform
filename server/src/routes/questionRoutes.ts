@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createQuestion, getQuestion, getDailyQuestion } from "../controllers/questionController.js";
+import { createQuestion, getQuestion, getDailyQuestion, listQuestions } from "../controllers/questionController.js";
 
 export const questionRouter = Router();
 
@@ -7,3 +7,4 @@ export const questionRouter = Router();
 questionRouter.post("/", createQuestion);
 questionRouter.get("/:questionId", getQuestion);
 questionRouter.get("/:scheduledYear/:scheduledMonth/:scheduledDay", getDailyQuestion);
+questionRouter.get("/", listQuestions);
