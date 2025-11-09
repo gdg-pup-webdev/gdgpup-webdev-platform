@@ -1,4 +1,5 @@
 import { Metatype } from "./Metatype.js";
+import { z } from "zod";
 
 export type TokenCore = {
   value: number;
@@ -6,12 +7,12 @@ export type TokenCore = {
   expirationDate?: number;
 
   // core metadata
-  creatorUid: string;
+  createdBy: string;
   isValid: boolean;
   code: string;
-  claimants: {
+  claimHistory: {
     uid: string;
-    dateClaimed: number;
+    date: number;
   }[];
 };
 
@@ -19,8 +20,11 @@ export type Token = Metatype & TokenCore;
 
 export type CreateTokenDTO = Omit<
   TokenCore,
-  keyof Metatype | "code" | "creatorUid" | "claimants" | "isValid"
+  keyof Metatype | "code" | "createdBy" | "claimHistory" | "isValid"
 >;
 
-
-
+export const createTokenSchema = z.object({
+  value: z.number().min(1, "Value must be at least 1"),
+  maxUses: z.number().min(1, "Max uses must be at least 1"),
+  expirationDate: z.number().optional(),
+});

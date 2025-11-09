@@ -5,8 +5,8 @@ import type { UserRecord } from "firebase-admin/auth";
 declare global {
   namespace Express {
     export interface Request {
-      user?: UserRecord | null;
-      decodedToken?: DecodedIdToken | null;
+      user?: UserRecord | undefined;
+      decodedToken?: DecodedIdToken | undefined;
     }
   }
 }

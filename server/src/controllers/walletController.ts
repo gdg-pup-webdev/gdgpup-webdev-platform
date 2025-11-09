@@ -1,18 +1,20 @@
 import { RequestHandler } from "express";
 import { db } from "../lib/firebase.js";
-import { Wallet } from "../types/Wallet.js";
 import { createApiResponse } from "../utils/apiRespones.js";
-import { isUserValid } from "../utils/firebaseUtils.js";
-import { randomUUID } from "crypto";
-import { JournalEntry } from "../types/Journal.js";
-import { 
+import {
+  createNewWalletOnDb,
   fetchWalletFromDb,
   incrementWalletValue,
 } from "../services/walletService.js";
 import { fetchUserFromDb } from "../services/userService.js";
+import { ApiRequestBody } from "../types/ApiInterface.js";
+import { WalletDuplicate, WalletList } from "../types/Wallet.js";
 
-export const getWalletAction: RequestHandler = async (req, res) => {
+export const getWallet: RequestHandler = async (req, res) => {
   const uid = req.params.uid;
+
+  // PERMISSIONS:
+  // public
 
   // check if user exists
   const user = await fetchUserFromDb(uid);
@@ -22,151 +24,39 @@ export const getWalletAction: RequestHandler = async (req, res) => {
   }
 
   // use wallet service to get user wallet
-  const wallet = await fetchWalletFromDb(uid);
+  let wallet = await fetchWalletFromDb(uid);
+
+  // if wallet doesnt exist, initiate one with 0 points
+  if (!wallet) {
+    wallet = await createNewWalletOnDb(uid);
+  }
 
   // returning the response
   res.json(createApiResponse(true, "Success", wallet));
 };
-
-export const incrementWalletPoints: RequestHandler = async (req, res) => {
-  const uid = req.params.uid;
-  const payload: { increment: number } = req.body.payload;
-  const increment = payload.increment;
-
-  // check if user exists
-  const user = await fetchUserFromDb(uid);
-  if (!user) {
-    res.status(404).json(createApiResponse(false, "User not found"));
-    return;
-  }
-
-  // get the wallet and increment it
-  const wallet = await fetchWalletFromDb(uid);
-  const newWallet = await incrementWalletValue(wallet, increment, uid);
-
-  // returning the response
-  res.json(createApiResponse(true, "Success", { newWallet: newWallet }));
-};
+ 
 
 export const listWallets: RequestHandler = async (req, res) => {
-  try {
-    // get query parameters for filtering and pagination
-    const limit = parseInt(req.query.limit as string) || 10;
-    const sortDirection = ((req.query.sortDirection as string) || "desc") as
-      | "asc"
-      | "desc";
-    const lastPageToken = (req.query.lastPageToken as string) || null;
+  // get sort direction (asc or desc)
+  const sortDirection = ((req.query.sortDirection as string) || "desc") as
+    | "asc"
+    | "desc";
 
-   // building the query
-  let query = db
-    .collection("wallets")
-    .orderBy("points", sortDirection)
-    .limit(limit);
-
-  if (lastPageToken) {
-    const lastDoc = await db.collection("wallets").doc(lastPageToken).get();
-    if (lastDoc.exists) {
-      query = query.startAfter(lastDoc);
-    }
+  // fetch the WalletList document
+  const walletListDoc = await db.collection("wallets").doc("list").get();
+  let walletList: WalletList = {};
+  if (walletListDoc.exists) {
+    walletList = walletListDoc.data() as WalletList;
   }
 
-  // executing the query
-  const snapshot = await query.get();
-  const data = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  // convert Record<string, WalletDuplicate> to array
+  let walletsArray = Object.values(walletList);
 
-    // returning the response
-    res.json(
-      createApiResponse(true, "Success", {
-        result:data,
-        lastPageToken:  data[data.length - 1]?.id || null,
-      })
-    );
-  } catch (err) {
-    console.error("Error fetching blogs:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch blogs" });
-  }
-};
+  // sort by points
+  walletsArray.sort((a, b) => {
+    if (sortDirection === "asc") return a.points - b.points;
+    return b.points - a.points;
+  });
 
-export const listWalletHistory: RequestHandler = async (req, res) => {
-  try {
-    const uid = req.params.uid;
-
-    // check if user exists
-    const user = await fetchUserFromDb(uid);
-    if (!user) {
-      res.status(404).json(createApiResponse(false, "User not found"));
-      return;
-    }
-
-    // get query parameters for filtering and pagination
-    const limit = parseInt(req.query.limit as string) || 10;
-    const sortDirection = ((req.query.sortDirection as string) || "desc") as
-      | "asc"
-      | "desc";
-    const lastPageToken = (req.query.lastPageToken as string) || null;
-
-    // building the query
-    let query = db
-      .collection("wallets")
-      .doc(uid)
-      .collection("history")
-      .orderBy("createdAt", sortDirection)
-      .limit(limit);
-
-    if (lastPageToken) {
-      const lastDoc = await db.collection("wallets").doc(lastPageToken).get();
-      if (lastDoc.exists) {
-        query = query.startAfter(lastDoc);
-      }
-    }
-
-    // executing the query
-    const snapshot = await query.get();
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    // returning the response
-    res.json(
-      createApiResponse(true, "Success", {
-        result: data,
-        lastPageToken: data[data.length - 1]?.id || null,
-      })
-    );
-  } catch (err) {
-    console.error("Error fetching blogs:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch blogs" });
-  }
-};
-
-export const getWalletHistoryEntry: RequestHandler = async (req, res) => {
-  const uid = req.params.uid;
-  const entryId = req.params.entryId;
-
-  // check if user exists
-  const user = await fetchUserFromDb(uid);
-  if (!user) {
-    res.status(404).json(createApiResponse(false, "User not found"));
-    return;
-  }
-
-  // check if entry exists
-  const doc = await db
-    .collection("wallets")
-    .doc(uid)
-    .collection("history")
-    .doc(entryId)
-    .get();
-
-  // if wallet doesnt exist, initiate one with 0 points
-  if (!doc.exists) {
-    res.status(404).json(createApiResponse(false, "Entry not found"));
-    return;
-  }
-
-  res.json(createApiResponse(true, "Success", doc.data()));
+  res.json(createApiResponse(true, "Success", walletsArray));
 };

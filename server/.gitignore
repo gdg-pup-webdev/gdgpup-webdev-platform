@@ -4,7 +4,8 @@
 
 # SERVER GITIGNORE
 
-
+dist
+.vscode
 
 
 
