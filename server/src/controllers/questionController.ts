@@ -7,7 +7,11 @@ import {
 } from "../types/Question.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
-import { validateCreateQuestionPayload } from "../services/questionService.js";
+import {
+  validateCreateQuestionPayload,
+  computeScheduledDate,
+  buildQuestionCore,
+} from "../services/questionService.js";
 
 // POST /questions
 export const createQuestion: RequestHandler = async (req, res) => {
@@ -40,29 +44,22 @@ export const createQuestion: RequestHandler = async (req, res) => {
   }
 
   const createQuestionDTO = validationResult.data;
-
-  const scheduledDate = Date.UTC(
+  const scheduledDate = computeScheduledDate(
     createQuestionDTO.scheduledYear,
-    createQuestionDTO.scheduledMonth - 1,
+    createQuestionDTO.scheduledMonth,
     createQuestionDTO.scheduledDay
   );
-
   if (Number.isNaN(scheduledDate)) {
     return res
       .status(400)
       .json(createApiResponse(false, "Invalid scheduled date"));
   }
-
   // STEP 2: creating the core question object
-  const questionCore: QuestionCore = {
-    ...createQuestionDTO,
-    creatorUid: user.uid,
-    scheduledDate,
-    status: "draft",
-    totalAttempts: 0,
-    totalCorrect: 0,
-    lastEditorUid: user.uid,
-  };
+  const questionCore: QuestionCore = buildQuestionCore(
+    createQuestionDTO,
+    user.uid,
+    user.uid
+  );
 
   // STEP 3: creating the question document
   try {
@@ -263,7 +260,7 @@ export const updateQuestion: RequestHandler = async (req, res) => {
   // Get questionId from params
   const questionId = req.params.questionId;
   const body = req.body as ApiRequestBody<CreateQuestionDTO>;
-  
+
   if (!body) {
     // Request body is required
     return res
@@ -300,20 +297,18 @@ export const updateQuestion: RequestHandler = async (req, res) => {
     }
 
     // Update question
-    const scheduledDate = Date.UTC(
+
+    const scheduledDate = computeScheduledDate(
       updateQuestionDTO.scheduledYear,
-      updateQuestionDTO.scheduledMonth - 1,
+      updateQuestionDTO.scheduledMonth,
       updateQuestionDTO.scheduledDay
     );
-
     if (Number.isNaN(scheduledDate)) {
       return res
         .status(400)
         .json(createApiResponse(false, "Invalid scheduled date"));
     }
-
     const now = Date.now();
-
     await questionDoc.update({
       ...updateQuestionDTO,
       scheduledDate,
