@@ -90,7 +90,7 @@ export const createQuestion: RequestHandler = async (req, res) => {
   }
 };
 
-// return specific question 
+// return specific question
 // GET /questions/{questionId}
 export const getQuestion: RequestHandler = async (req, res) => {
   if (!req.user) {
@@ -110,14 +110,59 @@ export const getQuestion: RequestHandler = async (req, res) => {
 
     const question = questionSnapshot.data() as Question;
 
-    return res
-      .status(200)
-      .json(createApiResponse(true, "Success", question));
+    return res.status(200).json(createApiResponse(true, "Success", question));
   } catch (error) {
     console.error("Failed to get question", error);
     return res
       .status(500)
       .json(createApiResponse(false, "Failed to get question"));
   }
-}
-    
+};
+
+// return daily question based on scheduled date
+// GET /questions/{scheduledYear}/{scheduledMonth}/{scheduledDay}
+export const getDailyQuestion: RequestHandler = async (req, res) => {
+  // Check for authenticated user
+  if (!req.user) {
+    return res.status(401).json({ error: "No user found" });
+  }
+
+  // Get scheduled date
+  const scheduledYear = parseInt(req.params.scheduledYear, 10);
+  const scheduledMonth = parseInt(req.params.scheduledMonth, 10);
+  const scheduledDay = parseInt(req.params.scheduledDay, 10);
+
+  // Validate scheduled date
+  const scheduledDate = Date.UTC(
+    scheduledYear,
+    scheduledMonth - 1,
+    scheduledDay
+  );
+
+  try {
+    // Query for the question with the matching scheduledDate
+    const questionsRef = db.collection("questions");
+    const querySnapshot = await questionsRef
+      .where("scheduledDate", "==", scheduledDate)
+      .limit(1)
+      .get();
+
+    // Check if the query returned any results
+    if (querySnapshot.empty) {
+      return res
+        .status(404)
+        .json(createApiResponse(false, "Daily question not found"));
+    }
+    // Get the first question
+    const question = querySnapshot.docs[0].data() as Question;
+
+    // Return the found question
+    return res.status(200).json(createApiResponse(true, "Success", question));
+  } catch (error) {
+    // Log the error
+    console.error("Failed to get question", error);
+    return res
+      .status(500)
+      .json(createApiResponse(false, "Failed to get question"));
+  }
+};
