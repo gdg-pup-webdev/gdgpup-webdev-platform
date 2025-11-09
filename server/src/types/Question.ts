@@ -1,41 +1,57 @@
+import { z } from "zod";
 import { Metatype } from "./Metatype.js";
 
-export type QuestionCore = {
-  title: string;
-  question: string;
-  answer: string;
-  explanation: string;
-  category: string;
-  tags?: string[];
-  options: Array<{
-    id: string;        // stable key (e.g., “A”, “B”, UUID)
-    text: string;      // what the user sees
-  }>;
-  difficulty?: "easy" | "medium" | "hard";
+const optionIdMessage = "Option id is required";
+const optionTextMessage = "Option text is required";
 
-  scheduledYear: number;
-  scheduledMonth: number;
-  scheduledDay: number;
-  scheduledDate: number;
+export const questionOptionSchema = z.object({
+  id: z.string().min(1, optionIdMessage),
+  text: z.string().min(1, optionTextMessage),
+});
 
-  pointsCorrect: number;
-  pointsIncorrect: number;
-  pointsUnanswered?: number;
-  timeLimitSeconds?: number;
+export const questionCoreSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
+  explanation: z.string().min(1, "Explanation is required"),
+  category: z.string().min(1, "Category is required"),
+  tags: z.array(z.string().min(1)).optional(),
+  options: z
+    .array(questionOptionSchema)
+    .min(2, "At least two options are required"),
+  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+  scheduledYear: z.number().int().min(1970).max(9999),
+  scheduledMonth: z.number().int().min(1).max(12),
+  scheduledDay: z.number().int().min(1).max(31),
+  scheduledDate: z.number().int(),
+  pointsCorrect: z.number().finite(),
+  pointsIncorrect: z.number().finite(),
+  pointsUnanswered: z.number().finite().optional(),
+  timeLimitSeconds: z.number().int().positive().optional(),
+  status: z.enum(["draft", "published", "archived"]),
+  creatorUid: z.string().min(1, "creatorUid is required"),
+  lastEditorUid: z.string().min(1, "lastEditorUid is required").optional(),
+  totalAttempts: z.number().int().nonnegative().optional(),
+  totalCorrect: z.number().int().nonnegative().optional(),
+});
 
-  // workflow + ownership
-  status: "draft" | "published" | "archived";
-  creatorUid: string;
-  lastEditorUid?: string;
+const metatypeSchema = z.object({
+  id: z.string().min(1, "id is required"),
+  createdAt: z.number().int(),
+  updatedAt: z.number().int(),
+});
 
-  // stats (optional)
-  totalAttempts?: number;
-  totalCorrect?: number;
-};
+export const questionSchema = metatypeSchema.merge(questionCoreSchema);
 
+export const createQuestionSchema = questionCoreSchema.omit({
+  scheduledDate: true,
+  creatorUid: true,
+  lastEditorUid: true,
+  status: true,
+  totalAttempts: true,
+  totalCorrect: true,
+});
+
+export type QuestionCore = z.infer<typeof questionCoreSchema>;
 export type Question = Metatype & QuestionCore;
-
-export type CreateQuestionDTO = Omit<
-  QuestionCore,
-  keyof Metatype | "scheduledDate" | "creatorUid" | "lastEditorUid" | "status" | "totalAttempts" | "totalCorrect"
->;
+export type CreateQuestionDTO = z.infer<typeof createQuestionSchema>;

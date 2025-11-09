@@ -7,6 +7,7 @@ import {
 } from "../types/Question.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
+import { validateCreateQuestionPayload } from "../services/questionService.js";
 
 export const createQuestion: RequestHandler = async (req, res) => {
   if (!req.user) {
@@ -15,7 +16,7 @@ export const createQuestion: RequestHandler = async (req, res) => {
   const user = req.user;
 
   // STEP 1: retriving the createQuestionDTO
-  const body = req.body as ApiRequestBody<CreateQuestionDTO>
+  const body = req.body as ApiRequestBody<CreateQuestionDTO>;
 
   if (!body) {
     return res
@@ -23,14 +24,21 @@ export const createQuestion: RequestHandler = async (req, res) => {
       .json(createApiResponse(false, "Request body is required"));
   }
 
-  const createQuestionDTO = body.payload;
+  const validationResult = validateCreateQuestionPayload(body.payload);
 
-  if (!createQuestionDTO) {
+  if (!validationResult.success) {
     return res
       .status(400)
-      .json(createApiResponse(false, "Invalid question payload"));
+      .json(
+        createApiResponse(
+          false,
+          "Invalid question payload",
+          validationResult.error.flatten()
+        )
+      );
   }
-    
+
+  const createQuestionDTO = validationResult.data;
 
   const scheduledDate = Date.UTC(
     createQuestionDTO.scheduledYear,
