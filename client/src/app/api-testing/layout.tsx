@@ -13,7 +13,7 @@ export const Layout = ({ children }: Props) => {
       <Navbar />
       <div className="w-full flex flex-row p-4 gap-4">
         <div className="w-full flex flex-col flex-1">{children}</div>
-        <div className="w-full flex max-w-sm">
+        <div className="w-full flex flex-1 max-w-sm">
           <UserStatsSidebar />
         </div>
       </div>
