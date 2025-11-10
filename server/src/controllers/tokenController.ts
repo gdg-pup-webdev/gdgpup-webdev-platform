@@ -9,11 +9,11 @@ import {
 import { generateTokenCode } from "../utils/tokenUtil.js";
 import { db } from "../lib/firebase.js";
 import { createApiResponse } from "../utils/apiRespones.js";
-import {
-  fetchWalletFromDb,
-  incrementWalletValue,
-} from "../services/walletService.js";
 import { fetchTokenFromDb } from "../services/tokenService.js";
+import {
+  fetchStatFromDb,
+  incrementWalletValue,
+} from "../services/statService.js";
 
 export const createToken: RequestHandler = async (req, res) => {
   const user = req.user!;
@@ -31,7 +31,8 @@ export const createToken: RequestHandler = async (req, res) => {
     const body = req.body as ApiRequestBody<CreateTokenDTO>;
     createTokenDTO = createTokenSchema.parse(body.payload);
   } catch (error) {
-    return res.status(400).json(createApiResponse(false, "Invalid DTO"));
+    console.error(error);
+    return res.status(400).json(createApiResponse(false, "you passed an invalid DTO"));
   }
 
   // create new token code
@@ -184,7 +185,8 @@ export const claimToken: RequestHandler = async (req, res) => {
   // get user wallet
 
   const uid = user?.uid;
-  const wallet = await fetchWalletFromDb(uid);
+  const userStats = await fetchStatFromDb(uid);
+  const wallet = userStats.wallet;
 
   // get token
   const tokenId = req.params.tokenId;
@@ -214,16 +216,17 @@ export const claimToken: RequestHandler = async (req, res) => {
 
   // add user to token claimants
   token.claimHistory.push({ uid: uid, date: Date.now() });
-  await db
-    .collection("tokens")
-    .doc(tokenId)
-    .update(token);
+  await db.collection("tokens").doc(tokenId).update(token);
 
   // increment user walletpoints
-  const newWallet = await incrementWalletValue(wallet, token.value, `Claimed ${token.value} points from token ${token.code}`);
+  const updatedUserStats = await incrementWalletValue(
+    uid,
+    token.value,
+    `Claimed ${token.value} points from token ${token.code}`
+  );
 
   // return new wallet data and new token data
   res.json(
-    createApiResponse(true, "Success", { newWallet: newWallet, token: token })
+    createApiResponse(true, "Success", { updatedUserStats: updatedUserStats, updatedToken: token })
   );
 };

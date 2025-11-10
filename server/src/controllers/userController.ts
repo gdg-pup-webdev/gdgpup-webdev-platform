@@ -5,15 +5,7 @@ import { UserClaims } from "../types/UserClaims.js";
 import { fetchUserFromDb } from "../services/userService.js";
 
 export const getUser: RequestHandler = async (req, res) => {
-  const user = req.user!;
-  const role = user.customClaims?.role || "guest";
   const uid = req.params.uid;
-
-  // PERMISSIONS:
-  // Must be authenticated and accessing own claims, except for admins
-  if (role !== "admin" && user.uid !== uid) {
-    return res.status(403).json(createApiResponse(false, "Forbidden."));
-  }
 
   let targetuUser = await fetchUserFromDb(uid);
 
@@ -35,16 +27,9 @@ export const getUser: RequestHandler = async (req, res) => {
   return res.json(createApiResponse(true, "Success", targetuUser));
 };
 
-export const getUserCustomClaims: RequestHandler = async (req, res) => {
-  const user = req.user!;
-  const role = user.customClaims?.role || "guest";
+export const getUserCustomClaims: RequestHandler = async (req, res) => { 
   const uid = req.params.uid;
-
-  // PERMISSIONS:
-  // Must be authenticated and accessing own claims, except for admins
-  if (role !== "admin" && user.uid !== uid) {
-    return res.status(403).json(createApiResponse(false, "Forbidden."));
-  }
+ 
 
   const targetuUser = await auth.getUser(uid);
 

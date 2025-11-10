@@ -9,14 +9,7 @@ import { restrictRoute } from "../middlewares/restrictRoute.js";
 
 export const userRouter = Router();
 
-// route middlewares
-userRouter.use(ensureUserExists);
 
-/**
- * GET /api/users/{uid}/custom-claims
- * Get user’s custom-claims
- * Must be authenticated and accessing own claims, except for admins
- */
 userRouter.get("/:uid", getUser)
 
 userRouter.get("/:uid/custom-claims", getUserCustomClaims);
