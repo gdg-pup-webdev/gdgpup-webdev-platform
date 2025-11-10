@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthStore>((set) => {
     if (user) {
       const tokenResult = await auth.currentUser?.getIdTokenResult();
       const token = tokenResult!.token;
-      const role = tokenResult!.claims.role as string || "guest";
+      const role = (tokenResult!.claims.role as string) || "guest";
       set({
         user,
         token,
@@ -46,6 +46,7 @@ export const useAuthStore = create<AuthStore>((set) => {
         token: null,
         state: "unauthenticated",
         error: null,
+        role: null,
       });
     }
   });

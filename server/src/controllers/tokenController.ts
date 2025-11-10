@@ -31,7 +31,8 @@ export const createToken: RequestHandler = async (req, res) => {
     const body = req.body as ApiRequestBody<CreateTokenDTO>;
     createTokenDTO = createTokenSchema.parse(body.payload);
   } catch (error) {
-    return res.status(400).json(createApiResponse(false, "Invalid DTO"));
+    console.error(error);
+    return res.status(400).json(createApiResponse(false, "you passed an invalid DTO"));
   }
 
   // create new token code

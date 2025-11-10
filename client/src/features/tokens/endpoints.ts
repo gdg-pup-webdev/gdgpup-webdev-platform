@@ -1,10 +1,10 @@
-import { ApiResponse } from "@/types/ApiInterface"; 
+import { ApiResponse } from "@/types/ApiInterface";
 import { UserStats } from "../userStats/UserStats";
 import { CreateTokenDTO, Token } from "./types";
 
 export const createToken = async (
   authToken: string,
-  createTokenDTO: CreateTokenDTO,
+  createTokenDTO: CreateTokenDTO
 ): Promise<Token> => {
   const base_url = process.env.NEXT_PUBLIC_API_URL;
   const result = await fetch(`${base_url}/api/tokens`, {
@@ -13,7 +13,9 @@ export const createToken = async (
       "Content-Type": "application/json",
       Authorization: `Bearer ${authToken}`,
     },
-    body: JSON.stringify(createTokenDTO),
+    body: JSON.stringify({
+      payload: createTokenDTO,
+    }),
   });
 
   if (!result.ok) {
@@ -33,7 +35,7 @@ export const voidToken = async (
   tokenId: string
 ): Promise<Token> => {
   const base_url = process.env.NEXT_PUBLIC_API_URL;
-  const result = await fetch(`${base_url}/api/tokens/${tokenId}`, {
+  const result = await fetch(`${base_url}/api/tokens/${tokenId}/void`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${authToken}`,
@@ -78,7 +80,6 @@ export const claimToken = async (
   return data;
 };
 
-
 export const getToken = async (
   tokenId: string,
   authToken: string
@@ -114,8 +115,8 @@ export const listTokens = async (
 }> => {
   const base_url = process.env.NEXT_PUBLIC_API_URL;
   const result = await fetch(
-    `${base_url}/api/tokens?sortDirection=${sortDirection}&limit=${limit}&${
-      lastPageToken ? `lastPageToken=${lastPageToken}` : ""
+    `${base_url}/api/tokens?sortDirection=${sortDirection}&limit=${limit}${
+      lastPageToken ? `&lastPageToken=${lastPageToken}` : ""
     }`,
     {
       method: "GET",
@@ -123,7 +124,7 @@ export const listTokens = async (
         Authorization: `Bearer ${authToken}`,
       },
     }
-  ); 
+  );
 
   if (!result.ok) {
     const errorPayload = await result.json().catch(() => ({}));
@@ -143,4 +144,3 @@ export const listTokens = async (
   const data = resultPayload.data!;
   return data;
 };
-

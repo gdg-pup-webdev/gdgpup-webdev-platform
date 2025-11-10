@@ -56,7 +56,7 @@ export function useInfiniteTokenQuery(limit = 10): InfiniteTokenQueryProps {
 export function useTokenQuery(tokenId?: string): UseQueryResult<Token, Error> {
   const { token: authToken } = useAuthStore();
   return useQuery({
-    queryKey: ["tokens", authToken],
+    queryKey: ["tokens", authToken, tokenId],
     queryFn: async () => {
       const response = await getToken(tokenId!, authToken!);
       return response;
