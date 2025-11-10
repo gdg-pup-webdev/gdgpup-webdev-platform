@@ -20,7 +20,7 @@ export function useUserStatsQuery(
   return useQuery({
     queryKey: ["stats", authToken],
     queryFn: async () => {
-      const response = await getUserStats(uid!, authToken!);
+      const response = await getUserStats(authToken!, uid! );
       return response;
     },
     enabled: !!uid && !!authToken,
