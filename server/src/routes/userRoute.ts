@@ -1,21 +1,44 @@
 import { Router } from "express";
-import {
-  getUser,
-  getUserCustomClaims,
-  nullifyUserCustomClaims,
-} from "../controllers/userController.js";
-import { ensureUserExists } from "../middlewares/verifyToken.js";
-import { restrictRoute } from "../middlewares/restrictRoute.js";
+import { auth } from "../lib/firebase.js";
 
 export const userRouter = Router();
 
+userRouter.get("/", async (req, res) => {
+  let user = req.user;
+  if (!user) {
+    return res.status(401).json({
+      errors: [
+        {
+          status: 401,
+          title: "Unauthorized",
+          detail: "You must be logged in to access this resource.",
+        },
+      ],
+    });
+  }
 
-userRouter.get("/:uid", getUser)
+  // get the claims of the user
+  const customClaims = user.customClaims;
 
-userRouter.get("/:uid/custom-claims", getUserCustomClaims);
+  // create the claims if it doesnt exist
+  if (!customClaims || Object.keys(customClaims).length === 0) {
+    const defaultClaims = { role: "user" };
+    await auth.setCustomUserClaims(user.uid, defaultClaims);
+    user = await auth.getUser(user.uid);
+  }
 
-userRouter.delete(
-  "/:uid/custom-claims",
-  restrictRoute(["admin"]),
-  nullifyUserCustomClaims
-);
+  return res.status(200).json({
+    data: {
+      type: "users",
+      attributes: {
+        displayName: user.displayName,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        phoneNumber: user.phoneNumber,
+        photoURL: user.photoURL,
+        uid: user.uid,
+        role: customClaims?.role || "guest",
+      },
+    },
+  });
+});
