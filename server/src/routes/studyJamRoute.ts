@@ -88,8 +88,7 @@ studyJamRouter.post("/", async (req, res) => {
 
 studyJamRouter.get("/:id", async (req, res) => {
   // --- 1. Security Check (NONE - PUBLIC) ---
-
-  const id = req.params.id;
+  const { id } = req.params;
 
   const { data, error } = await supabase
     .from("studyJams")
@@ -97,22 +96,42 @@ studyJamRouter.get("/:id", async (req, res) => {
     .eq("id", id)
     .single();
 
-  if (error)
-    return res.status(400).json({
+  if (error) {
+    // Supabase/PostgREST error code for "No rows found" on .single()
+    if (error.code === 'PGRST116') {
+        return res.status(404).json({
+            errors: [
+              {
+                status: "404",
+                title: "Not Found",
+                detail: `Study Jam with id ${id} not found.`,
+              },
+            ],
+        });
+    }
+
+    return res.status(500).json({
       errors: [
         {
-          status: 400,
-          title: "Bad Request",
+          status: "500",
+          title: "Database Error",
           detail: error.message,
         },
       ],
     });
+  }
+
+  // Construct the self link for this resource
+  const selfLink = `${req.protocol}://${req.get('host')}${req.baseUrl}/${id}`;
 
   return res.json({
+    links: {
+      self: selfLink,
+    },
     data: {
       type: "studyJams",
-      attributes: data,
       id: data.id,
+      attributes: data,
     },
   });
 });

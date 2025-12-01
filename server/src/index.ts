@@ -6,6 +6,7 @@ import { questionRouter } from "./routes/questionRoutes.js";
 import { statRouter } from "./routes/statsRoute.js";
 import cors from "cors";
 import { studyJamRouter } from "./routes/studyJamRoute.js";
+import { rateLimiter } from "./middlewares/rateLimiter.js";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -21,9 +22,15 @@ app.use(
   })
 );
 
+// rate limiting
+app.use(rateLimiter);
+
+
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Processing tokens
 app.use(parseToken);
