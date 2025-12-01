@@ -87,31 +87,7 @@ studyJamRouter.post("/", async (req, res) => {
 });
 
 studyJamRouter.get("/:id", async (req, res) => {
-  const user = req.user;
-  if (!user) {
-    return res.status(401).json({
-      errors: [
-        {
-          status: 401,
-          title: "Unauthorized",
-          detail: "You must be logged in to access this resource.",
-        },
-      ],
-    });
-  }
-
-  const role = user.customClaims?.role || "guest";
-  if (role !== "admin") {
-    return res.status(403).json({
-      errors: [
-        {
-          status: 403,
-          title: "Forbidden",
-          detail: "You do not have permission to access this resource.",
-        },
-      ],
-    });
-  }
+  // --- 1. Security Check (NONE - PUBLIC) ---
 
   const id = req.params.id;
 
@@ -145,32 +121,7 @@ studyJamRouter.get("/:id", async (req, res) => {
  * GET /api/study-jams/ - Paginated list of Study Jams
  */
 studyJamRouter.get("/", async (req, res) => {
-  // --- 1. Security Check (Admin Only) ---
-  const user = req.user;
-  if (!user) {
-    return res.status(401).json({
-      errors: [
-        {
-          status: 401,
-          title: "Unauthorized",
-          detail: "You must be logged in to access this resource.",
-        },
-      ],
-    });
-  }
-
-  const role = user.customClaims?.role || "guest";
-  if (role !== "admin") {
-    return res.status(403).json({
-      errors: [
-        {
-          status: 403,
-          title: "Forbidden",
-          detail: "You do not have permission to access this resource.",
-        },
-      ],
-    });
-  }
+  // --- 1. Security Check (NONE - PUBLIC) ---
 
   // --- 2. Pagination & Sorting Setup ---
   // Default values
