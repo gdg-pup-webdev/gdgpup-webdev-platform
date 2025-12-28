@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const page = async () => {
@@ -7,6 +8,7 @@ const page = async () => {
     <>
       <div>Home page</div>
       <div>{JSON.stringify(data)}</div>
+      <Link href="/policies">Go to Policies page</Link>
     </>
   );
 };
