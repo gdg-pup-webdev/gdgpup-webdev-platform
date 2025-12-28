@@ -10,7 +10,7 @@ const page = () => {
   return (
     <>
       <div className="flex flex-col gap-2 items-start">
-        <div> Home Page</div> 
+        <div> Debugging Page</div>
       </div>
     </>
   );
