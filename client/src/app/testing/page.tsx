@@ -1,32 +1,27 @@
 "use client";
 
-import { useAuthContext } from "@/providers/AuthProvider";
-import Link from "next/link";
 import React from "react";
 
-const page = () => {
-  const authContext = useAuthContext();
-  console.log(authContext);
+const TestingPage = () => {
+  const handleApiRequest = async () => {
+    const result = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/announcements`
+    );
+    const data = await result.json();
+    console.log(data);
+  };
 
   return (
     <>
-      <div>testing page page</div>
-      <Link href="/">Go to home page</Link>
-      <pre>{JSON.stringify(authContext, null, 2)}</pre>
+      <div>TestingPage</div>
       <button
-        className="p-2 border rounded-2xl bg-greenn-200"
-        onClick={authContext.loginWithGoogle}
+        onClick={handleApiRequest}
+        className="p-2 border rounded-2xl bg-blue-200"
       >
-        login with google{" "}
-      </button>
-      <button
-        className="p-2 border rounded-2xl bg-red-200"
-        onClick={authContext.logout}
-      >
-        logout
+        Test API Request
       </button>
     </>
   );
 };
 
-export default page;
+export default TestingPage;

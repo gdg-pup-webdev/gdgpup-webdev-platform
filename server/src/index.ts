@@ -7,17 +7,25 @@ import { statRouter } from "./routes/statsRoute.js";
 import cors from "cors";
 import { studyJamRouter } from "./routes/studyJamRoute.js";
 import { rateLimiter } from "./middlewares/rateLimiter.js";
+import { announcementRouter } from "./routes/announcementRoute.js";
 
 const app = express();
 const port = process.env.PORT || 8000;
 
 // CORS config
+// app.use(
+//   cors({
+//     origin: [
+//       process.env.DEV_MODE === "true" && "http://localhost:3000",
+//       "https://gdg-webdev.vercel.app",
+//     ],
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
-    origin: [
-      process.env.DEV_MODE === "true" && "http://localhost:3000",
-      "https://gdg-webdev.vercel.app",
-    ],
+    origin: ["http://localhost:3000"],
     credentials: true,
   })
 );
@@ -25,12 +33,9 @@ app.use(
 // rate limiting
 app.use(rateLimiter);
 
-
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // Processing tokens
 app.use(parseToken);
@@ -41,6 +46,12 @@ app.use("/api/stats", statRouter);
 app.use("/api/tokens", tokenRouter);
 app.use("/api/questions", questionRouter);
 app.use("/api/study-jams", studyJamRouter);
+app.use("/api/announcements", announcementRouter);
+
+
+app.use("/api/test-endpoint", (req, res) => {
+  res.json({ success: true, message: "testing route", data: null });
+});
 
 app.get("/", (req, res) => {
   res.json({

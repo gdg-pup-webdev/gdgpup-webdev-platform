@@ -13,6 +13,9 @@ export const DebugNavbar = () => {
       <Link href="/debugging/auth" className="underline text-blue-500">
         Auth Debugging Page
       </Link>
+      <Link href="/testing" className="underline text-blue-500">
+        Testing Page
+      </Link>
     </div>
   );
 };
