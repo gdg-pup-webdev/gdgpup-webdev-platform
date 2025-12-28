@@ -54,14 +54,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         if (firebaseUser) {
           // Force refresh to get the latest claims (role)
-          const tokenResult = await firebaseUser.getIdTokenResult(); 
+          const tokenResult = await firebaseUser.getIdTokenResult();
           const token = tokenResult.token;
           const role = (tokenResult.claims.role as string) || "guest";
 
           // Retrieve Google Token from storage (since Firebase doesn't persist it)
           // NOTE: getCookie can return undefined, strict check helps
           const storedAccessToken = getCookie("googleAccessToken");
-          const googleToken = typeof storedAccessToken === 'string' ? storedAccessToken : null;
+          const googleToken =
+            typeof storedAccessToken === "string" ? storedAccessToken : null;
 
           // 4. ATOMIC UPDATE: User, Role, and Status update together
           setAuthState({
@@ -94,29 +95,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async () => {
     try {
-      // Set loading state or clear errors before starting
       setAuthState((prev) => ({ ...prev, error: null }));
 
       const result = await signInWithPopup(auth, googleProvider);
-      
-      // Extract Google Access Token (Only available immediately after login)
+      // --- CRITICAL MOMENT ---
+      // At this exact millisecond, the onIdTokenChanged listener has likely
+      // already fired. It checked for a cookie, found nothing, and set
+      // googleAccessToken: null in your state.
+      // -----------------------
+
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const googleAccessToken = credential?.accessToken || null;
 
       if (googleAccessToken) {
-        // SECURITY NOTE: 'lax' or 'strict' is crucial. 
-        // Ideally, do this via a Server Action to set an HTTPOnly cookie.
         setCookie("googleAccessToken", googleAccessToken, {
-          maxAge: 60 * 60, // Google tokens usually expire in 1 hour
-          secure: true, // Only send over HTTPS
-          sameSite: "strict", // Protect against CSRF
+          maxAge: 60 * 60,
+          secure: true,
+          sameSite: "strict",
         });
-      }
 
-      // We do NOT need to manually setAuthState here. 
-      // The onIdTokenChanged listener will fire automatically 
-      // when signInWithPopup succeeds, handling the state update for us.
-      
+        // FIX: Manually "win" the race by updating the state here.
+        // We use a functional update (prev) to ensure we don't overwrite
+        // the 'user' object that the listener just set.
+        setAuthState((prev) => ({
+          ...prev,
+          googleAccessToken: googleAccessToken,
+        }));
+      }
     } catch (error: any) {
       console.error(error);
       setAuthState((prev) => ({
