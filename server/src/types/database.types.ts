@@ -45,7 +45,7 @@ export type Database = {
           content: string
           created_at: string
           creator_id: string
-          id: number
+          id: string
           title: string
         }
         Insert: {
@@ -53,7 +53,7 @@ export type Database = {
           content: string
           created_at?: string
           creator_id: string
-          id?: number
+          id?: string
           title: string
         }
         Update: {
@@ -61,7 +61,7 @@ export type Database = {
           content?: string
           created_at?: string
           creator_id?: string
-          id?: number
+          id?: string
           title?: string
         }
         Relationships: [
@@ -74,26 +74,339 @@ export type Database = {
           },
         ]
       }
+      badge: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string
+          icon_url: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description: string
+          icon_url?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string
+          icon_url?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      badge_user_junction: {
+        Row: {
+          badge_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_user_junction_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "badge_user_junction_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question: {
+        Row: {
+          answer: number
+          category: string | null
+          created_at: string
+          creator_id: string
+          explanation: string | null
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string | null
+          option_d: string | null
+          question: string
+          schedule: string
+          value: number
+        }
+        Insert: {
+          answer: number
+          category?: string | null
+          created_at?: string
+          creator_id: string
+          explanation?: string | null
+          id?: string
+          option_a: string
+          option_b: string
+          option_c?: string | null
+          option_d?: string | null
+          question: string
+          schedule: string
+          value: number
+        }
+        Update: {
+          answer?: number
+          category?: string | null
+          created_at?: string
+          creator_id?: string
+          explanation?: string | null
+          id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string | null
+          option_d?: string | null
+          question?: string
+          schedule?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_answer: {
+        Row: {
+          answer: number
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          answer: number
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: number
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_answer_creator_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_answer_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "question"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spark_token: {
+        Row: {
+          code: string
+          created_at: string
+          creator_id: string
+          exp_date: string
+          id: string
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          creator_id: string
+          exp_date: string
+          id?: string
+          value: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          creator_id?: string
+          exp_date?: string
+          id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spark_tokens_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spark_transaction: {
+        Row: {
+          created_at: string
+          id: string
+          token_id: string
+          wallet_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          token_id: string
+          wallet_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          token_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spark_token_transaction_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "spark_token"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spark_token_transaction_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "spark_wallet"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spark_wallet: {
+        Row: {
+          created_at: string
+          id: string
+          points_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spark_wallet_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_jam: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string
+          id: string
+          post_jam_activity_url: string | null
+          post_jam_kit_url: string | null
+          pre_jam_kit_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description: string
+          id?: string
+          post_jam_activity_url?: string | null
+          post_jam_kit_url?: string | null
+          pre_jam_kit_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string
+          id?: string
+          post_jam_activity_url?: string | null
+          post_jam_kit_url?: string | null
+          pre_jam_kit_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_jam_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profile: {
         Row: {
           avatar_url: string | null
           created_at: string
-          display_name: string | null
-          email: string | null
+          display_name: string
+          email: string
           id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          display_name?: string | null
-          email?: string | null
+          display_name: string
+          email: string
           id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
-          display_name?: string | null
-          email?: string | null
+          display_name?: string
+          email?: string
           id?: string
         }
         Relationships: []
